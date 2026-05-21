@@ -1,4 +1,5 @@
 from unittest import mock
+
 import qrcode
 from qrcode import util
 

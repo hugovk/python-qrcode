@@ -38,7 +38,7 @@ def test_glog_zero_data_with_leading_zeros():
 
 def test_glog_zero_binary_data_at_capacity():
     """Regression test for issue #423: glog(0) with binary null bytes at capacity limit."""
-    from qrcode.util import QRData, MODE_8BIT_BYTE
+    from qrcode.util import MODE_8BIT_BYTE, QRData
 
     # Version 5 + Q = 60 bytes capacity, data padded with trailing null bytes
     data = (
