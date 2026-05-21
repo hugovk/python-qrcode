@@ -43,8 +43,7 @@ def test_glog_zero_binary_data_at_capacity():
     # Version 5 + Q = 60 bytes capacity, data padded with trailing null bytes
     data = (
         b"\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x16"
-        b"Hello from kakaworld!!"
-        + b"\x00" * 26
+        b"Hello from kakaworld!!" + b"\x00" * 26
     )
     assert len(data) == 60
     qr = qrcode.QRCode(version=5, error_correction=qrcode.constants.ERROR_CORRECT_Q)
