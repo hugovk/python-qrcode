@@ -34,6 +34,7 @@ default_factories = {
     "svg": "qrcode.image.svg.SvgImage",
     "svg-fragment": "qrcode.image.svg.SvgFragmentImage",
     "svg-path": "qrcode.image.svg.SvgPathImage",
+    "styled-pil": "qrcode.image.styledpil.StyledPilImage",
     # Keeping for backwards compatibility:
     "pymaging": "qrcode.image.pure.PymagingImage",
 }
@@ -79,9 +80,10 @@ def main(args=None):
         "--error-correction",
         type="choice",
         choices=sorted(error_correction.keys()),
-        default="M",
+        default=None,
         help="The error correction level to use. Choices are L (7%), "
-        "M (15%, default), Q (25%), and H (30%).",
+        "M (15%, default), Q (25%), and H (30%). When --embedded-image-path "
+        "is used, H is required and used by default.",
     )
     parser.add_option(
         "--ascii", help="Print as ascii even if stdout is piped.", action="store_true"
@@ -91,8 +93,33 @@ def main(args=None):
         help="The output file. If not specified, the image is sent to "
         "the standard output.",
     )
+    parser.add_option(
+        "--embedded-image-path",
+        help="Path to an image to embed in the center of the QR code. "
+        "Implies --factory styled-pil and --error-correction H.",
+    )
+    parser.add_option(
+        "--embedded-image-ratio",
+        type=float,
+        help="Size of the embedded image as a ratio of the QR code width, "
+        "between 0 and 1 (default 0.25). Requires --embedded-image-path.",
+    )
 
     opts, args = parser.parse_args(args)
+
+    if opts.embedded_image_ratio is not None and not opts.embedded_image_path:
+        raise_error("--embedded-image-ratio requires --embedded-image-path.")
+
+    if opts.embedded_image_path:
+        if opts.error_correction is not None and opts.error_correction != "H":
+            raise_error(
+                "--embedded-image-path requires --error-correction H."
+            )
+        opts.error_correction = "H"
+        if opts.factory is None:
+            opts.factory = "styled-pil"
+    elif opts.error_correction is None:
+        opts.error_correction = "M"
 
     if opts.factory:
         module = default_factories.get(opts.factory, opts.factory)
@@ -118,8 +145,14 @@ def main(args=None):
     else:
         qr.add_data(data, optimize=opts.optimize)
 
+    image_kwargs = {}
+    if opts.embedded_image_path:
+        image_kwargs["embedded_image_path"] = opts.embedded_image_path
+    if opts.embedded_image_ratio is not None:
+        image_kwargs["embedded_image_ratio"] = opts.embedded_image_ratio
+
     if opts.output:
-        img = qr.make_image()
+        img = qr.make_image(**image_kwargs)
         with Path(opts.output).open("wb") as out:
             img.save(out)
     else:
@@ -141,7 +174,7 @@ def main(args=None):
                 )
             drawer_cls, drawer_kwargs = aliases[opts.factory_drawer]
             kwargs["module_drawer"] = drawer_cls(**drawer_kwargs)
-        img = qr.make_image(**kwargs)
+        img = qr.make_image(**kwargs, **image_kwargs)
 
         sys.stdout.flush()
         img.save(sys.stdout.buffer)

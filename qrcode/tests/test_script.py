@@ -94,6 +94,67 @@ def test_factory_drawer(capsys):
     main(["testtext", "--factory", "svg", "--factory-drawer", "circle"])
 
 
+def test_embedded_image(tmp_path):
+    pytest.importorskip("PIL", reason="Requires PIL")
+    from PIL import Image
+
+    embed = tmp_path / "embed.png"
+    Image.new("RGB", (40, 40), "red").save(embed)
+    out = tmp_path / "out.png"
+    main(["testtext", "--embedded-image-path", str(embed), "--output", str(out)])
+    assert out.exists()
+
+
+def test_embedded_image_ratio(tmp_path):
+    pytest.importorskip("PIL", reason="Requires PIL")
+    from PIL import Image
+
+    embed = tmp_path / "embed.png"
+    Image.new("RGB", (40, 40), "red").save(embed)
+    out = tmp_path / "out.png"
+    main(
+        [
+            "testtext",
+            "--embedded-image-path",
+            str(embed),
+            "--embedded-image-ratio",
+            "0.4",
+            "--output",
+            str(out),
+        ]
+    )
+    assert out.exists()
+
+
+def test_embedded_image_ratio_without_path(capsys):
+    with pytest.raises(SystemExit):
+        main(["testtext", "--embedded-image-ratio", "0.4"])
+    assert "--embedded-image-ratio requires --embedded-image-path" in (
+        capsys.readouterr()[1]
+    )
+
+
+def test_embedded_image_wrong_error_correction(tmp_path, capsys):
+    pytest.importorskip("PIL", reason="Requires PIL")
+    from PIL import Image
+
+    embed = tmp_path / "embed.png"
+    Image.new("RGB", (40, 40), "red").save(embed)
+    with pytest.raises(SystemExit):
+        main(
+            [
+                "testtext",
+                "--embedded-image-path",
+                str(embed),
+                "--error-correction",
+                "L",
+            ]
+        )
+    assert "--embedded-image-path requires --error-correction H" in (
+        capsys.readouterr()[1]
+    )
+
+
 def test_commas():
     assert commas([]) == ""
     assert commas(["A"]) == "A"
