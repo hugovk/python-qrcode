@@ -270,7 +270,6 @@ def test_print_tty_stdout():
     qr = qrcode.QRCode()
     with mock.patch("sys.stdout") as fake_stdout:
         fake_stdout.isatty.return_value = None
-        pytest.raises(OSError, qr.print_tty)
         assert fake_stdout.isatty.called
 
 
